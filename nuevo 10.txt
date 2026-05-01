@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Agenda de 7mo Liceo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .card { border-radius: 1rem; transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .schedule-grid { display: grid; grid-template-columns: 100px 1fr; gap: 8px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-indigo-700">📚 Mi Agenda de 7mo</h1>
+                <p class="text-slate-500">Horario completo y tareas pendientes</p>
+            </div>
+            <div id="google-btn-container" class="flex flex-col items-end">
+                <div id="g_id_onload"
+                     data-client_id="TU_CLIENT_ID.apps.googleusercontent.com"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false"
+                     data-context="use">
+                </div>
+                <div class="g_id_signin" data-type="standard"></div>
+                <p id="user-info" class="hidden text-sm text-green-600 mt-2 font-medium"></p>
+            </div>
+        </header>
+
+        <!-- Recordatorios Rápidos -->
+        <section id="reminders" class="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+            <h2 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center gap-2">
+                🔔 Lo que viene mañana
+            </h2>
+            <div id="alerts-content" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-400">
+                    <p class="text-sm font-bold text-slate-400 uppercase tracking-wider">Materias Mañana</p>
+                    <p id="next-day-subjects" class="text-slate-800 font-medium">Cargando horario...</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-400">
+                    <p class="text-sm font-bold text-slate-400 uppercase tracking-wider">Tareas para Mañana</p>
+                    <p id="urgent-tasks" class="text-slate-800 font-medium">No hay tareas urgentes.</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Horario Detallado -->
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 card shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600">
+                        📅 Mi Horario Semanal
+                    </h3>
+                    <div id="schedule-list" class="space-y-6">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tareas -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 card shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600">📝 Gestión de Tareas</h3>
+                    
+                    <div class="mb-6 flex flex-col md:flex-row gap-2 bg-slate-50 p-4 rounded-xl">
+                        <input type="text" id="task-name" placeholder="¿Qué pidió el profe?" class="flex-1 p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
+                        <input type="date" id="task-date" class="p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
+                        <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-bold">Anotar</button>
+                    </div>
+
+                    <div id="tasks-container" class="space-y-3">
+                        <!-- Tareas aparecerán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-2xl max-w-sm w-full shadow-2xl">
+            <h4 id="modal-title" class="text-lg font-bold mb-2 text-indigo-700"></h4>
+            <p id="modal-message" class="text-slate-600 mb-6"></p>
+            <button onclick="closeModal()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition">Entendido</button>
+        </div>
+    </div>
+
+    <script>
+        // Horario actualizado con los datos del usuario
+        const schedule = {
+            "Lunes": ["Geografía", "Id. Español", "Biología", "Ciencias de la comp."],
+            "Martes": ["Matemática", "Portugués", "Cs. Físico-Química", "Ed. Física y Rec."],
+            "Miércoles": ["Id. Español", "Cs. Físico-Química", "Historia", "Ed. Musical", "J2"],
+            "Jueves": ["Geografía", "Historia", "Matemática", "Com. Visual", "Yoga", "Ed. Física y Rec."],
+            "Viernes": ["Ciencias de la comp.", "Matemática", "Biología", "Téc. Estudio", "Inglés", "J2"]
+        };
+
+        let tasks = JSON.parse(localStorage.getItem('tasks_7mo')) || [];
+
+        window.onload = () => {
+            renderSchedule();
+            renderTasks();
+            checkReminders();
+        };
+
+        function renderSchedule() {
+            const container = document.getElementById('schedule-list');
+            container.innerHTML = '';
+            
+            Object.keys(schedule).forEach(day => {
+                const div = document.createElement('div');
+                div.className = "border-l-2 border-indigo-200 pl-4 py-1";
+                div.innerHTML = `
+                    <h4 class="font-bold text-indigo-700 mb-1">${day}</h4>
+                    <div class="flex flex-wrap gap-1">
+                        ${schedule[day].map(sub => `<span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md border border-indigo-100">${sub}</span>`).join('')}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="text-center py-10"><p class="text-slate-400 italic">No tienes tareas pendientes. ¡Libre!</p></div>';
+                return;
+            }
+
+            tasks.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(task => {
+                const isUrgent = isTomorrow(task.date);
+                const div = document.createElement('div');
+                div.className = `group flex items-center justify-between p-4 rounded-xl border transition-all ${task.completed ? 'bg-slate-50 border-slate-200 opacity-60' : (isUrgent ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-white border-slate-100 shadow-sm')}`;
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})" class="w-6 h-6 rounded-full border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <div>
+                            <p class="font-bold ${task.completed ? 'line-through text-slate-400' : 'text-slate-800'}">${task.name}</p>
+                            <p class="text-xs ${isUrgent && !task.completed ? 'text-red-500 font-bold' : 'text-slate-500'} italic">
+                                ${isUrgent && !task.completed ? '⚠️ ENTREGA MAÑANA' : 'Fecha: ' + formatDate(task.date)}
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="deleteTask(${task.id})" class="text-slate-300 hover:text-red-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+            localStorage.setItem('tasks_7mo', JSON.stringify(tasks));
+            checkReminders();
+        }
+
+        function addTask() {
+            const name = document.getElementById('task-name').value;
+            const date = document.getElementById('task-date').value;
+
+            if (!name || !date) {
+                showModal("Faltan datos", "Escribe el nombre de la tarea y cuándo hay que entregarla.");
+                return;
+            }
+
+            tasks.push({ id: Date.now(), name, date, completed: false });
+            document.getElementById('task-name').value = '';
+            document.getElementById('task-date').value = '';
+            renderTasks();
+        }
+
+        function toggleTask(id) {
+            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+            renderTasks();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            renderTasks();
+        }
+
+        function isTomorrow(dateStr) {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            return dateStr === tomorrow.toISOString().split('T')[0];
+        }
+
+        function formatDate(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function checkReminders() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const daysMap = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            const tomorrowDayName = daysMap[tomorrow.getDay()];
+            const tomorrowISO = tomorrow.toISOString().split('T')[0];
+
+            // Materias
+            const subjectsElement = document.getElementById('next-day-subjects');
+            if (schedule[tomorrowDayName]) {
+                subjectsElement.innerText = `Mañana tienes: ${schedule[tomorrowDayName].join(', ')}`;
+            } else {
+                subjectsElement.innerText = "¡No hay clases mañana!";
+            }
+
+            // Tareas
+            const urgentElement = document.getElementById('urgent-tasks');
+            const urgent = tasks.filter(t => t.date === tomorrowISO && !t.completed);
+            if (urgent.length > 0) {
+                urgentElement.innerHTML = `<span class="text-red-600">¡Tenés que terminar: ${urgent.map(t => t.name).join(', ')}!</span>`;
+            } else {
+                urgentElement.innerText = "Todo al día por ahora.";
+            }
+        }
+
+        function handleCredentialResponse(response) {
+            try {
+                const base64Url = response.credential.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                const payload = JSON.parse(jsonPayload);
+                document.getElementById('user-info').innerText = `Estudiante: ${payload.name}`;
+                document.getElementById('user-info').classList.remove('hidden');
+                showModal("¡Hola!", `Agenda vinculada con la cuenta de ${payload.given_name}.`);
+            } catch (e) { console.error(e); }
+        }
+
+        function showModal(title, msg) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = msg;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
