@@ -1,204 +1,563 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Agenda de 7mo Liceo</title>
+    <title>Nexus Agenda | 7mo Grado</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            black: '#0a0a0f',
+                            dark: '#11111a',
+                            panel: '#1a1a24',
+                            primary: '#00f0ff',
+                            secondary: '#7000ff',
+                            accent: '#ff0055'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Rajdhani"', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google APIs -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .card { border-radius: 1rem; transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .schedule-grid { display: grid; grid-template-columns: 100px 1fr; gap: 8px; }
+        body {
+            background-color: theme('colors.cyber.black');
+            color: white;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(112, 0, 255, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08), transparent 25%);
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(26, 26, 36, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        .neon-border {
+            position: relative;
+        }
+        .neon-border::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(45deg, #00f0ff, #7000ff);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+        .neon-border:hover::before {
+            opacity: 1;
+        }
+        .cyber-button {
+            position: relative;
+            background: theme('colors.cyber.panel');
+            color: white;
+            border: 1px solid theme('colors.cyber.primary');
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        .cyber-button:hover {
+            background: theme('colors.cyber.primary');
+            color: black;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+        }
+        .cyber-button.secondary {
+            border-color: theme('colors.cyber.secondary');
+            box-shadow: 0 0 10px rgba(112, 0, 255, 0.2);
+        }
+        .cyber-button.secondary:hover {
+            background: theme('colors.cyber.secondary');
+            color: white;
+            box-shadow: 0 0 20px rgba(112, 0, 255, 0.6);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: theme('colors.cyber.dark'); }
+        ::-webkit-scrollbar-thumb { background: theme('colors.cyber.secondary'); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: theme('colors.cyber.primary'); }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-5xl mx-auto">
+<body class="p-4 md:p-8 min-h-screen">
+    <div class="max-w-6xl mx-auto space-y-6">
+        
         <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-indigo-700">📚 Mi Agenda de 7mo</h1>
-                <p class="text-slate-500">Horario completo y tareas pendientes</p>
+        <header class="glass-panel p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-cyber-primary opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+            
+            <div class="z-10">
+                <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-2">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyber-primary to-cyber-secondary">NEXUS</span> AGENDA
+                </h1>
+                <p class="text-gray-400 font-mono text-sm">v2.0 // SISTEMA DE ORGANIZACIÓN DE 7MO</p>
             </div>
-            <div id="google-btn-container" class="flex flex-col items-end">
-                <div id="g_id_onload"
-                     data-client_id="TU_CLIENT_ID.apps.googleusercontent.com"
-                     data-callback="handleCredentialResponse"
-                     data-auto_prompt="false"
-                     data-context="use">
+            
+            <div class="flex flex-col items-center md:items-end gap-3 z-10">
+                <button id="auth-btn" class="cyber-button px-6 py-2 rounded-lg flex items-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
+                    Conectar con Google
+                </button>
+                <div id="user-info" class="hidden flex items-center gap-2">
+                    <img id="user-avatar" class="w-8 h-8 rounded-full border border-cyber-primary" src="" alt="avatar">
+                    <span id="user-name" class="font-mono text-sm text-cyber-primary"></span>
+                    <button id="signout-btn" class="text-xs text-gray-500 hover:text-cyber-accent ml-2">Desconectar</button>
                 </div>
-                <div class="g_id_signin" data-type="standard"></div>
-                <p id="user-info" class="hidden text-sm text-green-600 mt-2 font-medium"></p>
+                <button onclick="requestNotificationPermission()" class="text-xs font-mono text-gray-400 hover:text-white flex items-center gap-1 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    Activar Alertas
+                </button>
             </div>
         </header>
 
-        <!-- Recordatorios Rápidos -->
-        <section id="reminders" class="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
-            <h2 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center gap-2">
-                🔔 Lo que viene mañana
-            </h2>
-            <div id="alerts-content" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-400">
-                    <p class="text-sm font-bold text-slate-400 uppercase tracking-wider">Materias Mañana</p>
-                    <p id="next-day-subjects" class="text-slate-800 font-medium">Cargando horario...</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-400">
-                    <p class="text-sm font-bold text-slate-400 uppercase tracking-wider">Tareas para Mañana</p>
-                    <p id="urgent-tasks" class="text-slate-800 font-medium">No hay tareas urgentes.</p>
-                </div>
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Dashboard / Status (Left Column) -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Status Panel -->
+                <section class="glass-panel p-5 rounded-2xl neon-border">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-white">
+                        <span class="w-2 h-2 rounded-full bg-cyber-accent animate-pulse"></span>
+                        ESTADO PARA MAÑANA
+                    </h2>
+                    <div class="space-y-4 font-mono">
+                        <div class="bg-cyber-dark p-3 rounded-xl border border-gray-800">
+                            <p class="text-xs text-gray-500 mb-1">MATERIAS:</p>
+                            <p id="next-day-subjects" class="text-sm text-cyber-primary">Cargando...</p>
+                        </div>
+                        <div class="bg-cyber-dark p-3 rounded-xl border border-gray-800">
+                            <p class="text-xs text-gray-500 mb-1">TAREAS URGENTES:</p>
+                            <div id="urgent-tasks" class="text-sm"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Horario Semanal -->
+                <section class="glass-panel p-5 rounded-2xl neon-border">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">HORARIO</h2>
+                        <button onclick="syncScheduleToCalendar()" class="text-xs cyber-button secondary px-2 py-1 rounded" title="Exportar a Google Calendar para que el Asistente lo lea">
+                            Sincronizar Asistente
+                        </button>
+                    </div>
+                    <div id="schedule-list" class="space-y-3 font-mono text-sm">
+                        <!-- JS renders here -->
+                    </div>
+                </section>
             </div>
-        </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Horario Detallado -->
-            <div class="lg:col-span-1">
-                <div class="bg-white p-6 card shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600">
-                        📅 Mi Horario Semanal
-                    </h3>
-                    <div id="schedule-list" class="space-y-6">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tareas -->
-            <div class="lg:col-span-2">
-                <div class="bg-white p-6 card shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-bold mb-4 text-indigo-600">📝 Gestión de Tareas</h3>
-                    
-                    <div class="mb-6 flex flex-col md:flex-row gap-2 bg-slate-50 p-4 rounded-xl">
-                        <input type="text" id="task-name" placeholder="¿Qué pidió el profe?" class="flex-1 p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
-                        <input type="date" id="task-date" class="p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
-                        <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-bold">Anotar</button>
+            <!-- Tareas (Right Column) -->
+            <div class="lg:col-span-2 space-y-6">
+                <section class="glass-panel p-6 rounded-2xl neon-border h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-white">BASE DE DATOS: TAREAS</h2>
+                        <span id="sync-status" class="text-xs font-mono text-gray-500 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-gray-600 inline-block"></span> Local
+                        </span>
                     </div>
 
-                    <div id="tasks-container" class="space-y-3">
-                        <!-- Tareas aparecerán aquí -->
+                    <!-- Input Area -->
+                    <div class="bg-cyber-dark p-4 rounded-xl border border-gray-800 mb-6 flex flex-col md:flex-row gap-3">
+                        <input type="text" id="task-name" placeholder="Ej: Ejercicios de Matemática pág 42..." 
+                            class="flex-1 bg-cyber-black border border-gray-700 rounded-lg p-3 text-white font-mono focus:border-cyber-primary focus:outline-none transition-colors">
+                        <input type="date" id="task-date" 
+                            class="bg-cyber-black border border-gray-700 rounded-lg p-3 text-white font-mono focus:border-cyber-primary focus:outline-none [color-scheme:dark]">
+                        <button onclick="addTask()" class="cyber-button px-6 py-3 rounded-lg">Guardar</button>
                     </div>
-                </div>
+
+                    <!-- Task List -->
+                    <div id="tasks-container" class="space-y-3 flex-1 overflow-y-auto pr-2">
+                        <!-- JS renders here -->
+                    </div>
+                </section>
             </div>
         </div>
     </div>
 
-    <!-- Modal -->
-    <div id="custom-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white p-6 rounded-2xl max-w-sm w-full shadow-2xl">
-            <h4 id="modal-title" class="text-lg font-bold mb-2 text-indigo-700"></h4>
-            <p id="modal-message" class="text-slate-600 mb-6"></p>
-            <button onclick="closeModal()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition">Entendido</button>
+    <!-- Feedback Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 translate-y-20 opacity-0 transition-all duration-300 glass-panel p-4 rounded-xl border-l-4 border-cyber-primary z-50 pointer-events-none flex items-center gap-3">
+        <div id="toast-icon" class="text-cyber-primary"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm"></h4>
+            <p id="toast-message" class="text-xs text-gray-400 font-mono"></p>
         </div>
     </div>
 
     <script>
-        // Horario actualizado con los datos del usuario
+        // ==========================================
+        // CONFIGURACIÓN E INICIALIZACIÓN
+        // ==========================================
+        // IMPORTANTE: Debes reemplazar esto con tu propio Client ID de Google Cloud Console
+        // Necesita las APIs habilitadas: Google Tasks API, Google Calendar API
+        const GOOGLE_CLIENT_ID = 'TU_CLIENT_ID_AQUI.apps.googleusercontent.com'; // <-- CAMBIAR AQUÍ
+        const DISCOVERY_DOCS = [
+            'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
+            'https://www.googleapis.com/discovery/v1/apis/tasks/v1/rest'
+        ];
+        const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/tasks';
+
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let isAuthenticated = false;
+        let googleTaskListId = '@default';
+
         const schedule = {
             "Lunes": ["Geografía", "Id. Español", "Biología", "Ciencias de la comp."],
             "Martes": ["Matemática", "Portugués", "Cs. Físico-Química", "Ed. Física y Rec."],
             "Miércoles": ["Id. Español", "Cs. Físico-Química", "Historia", "Ed. Musical", "J2"],
-            "Jueves": ["Geografía", "Historia", "Matemática", "Com. Visual", "Yoga", "Ed. Física y Rec."],
-            "Viernes": ["Ciencias de la comp.", "Matemática", "Biología", "Téc. Estudio", "Inglés", "J2"]
+            "Jueves": ["Geografía", "Historia", "Matemática", "Com. Visual", "Yoga", "Ed. Física"],
+            "Viernes": ["Ciencias de la comp.", "Matemática", "Biología", "Téc. Estudio", "Inglés"]
         };
 
-        let tasks = JSON.parse(localStorage.getItem('tasks_7mo')) || [];
+        let localTasks = JSON.parse(localStorage.getItem('nexus_tasks')) || [];
 
         window.onload = () => {
             renderSchedule();
             renderTasks();
-            checkReminders();
+            updateTomorrowStatus();
+            
+            // Inicializar APIs de Google
+            if (GOOGLE_CLIENT_ID !== 'TU_CLIENT_ID_AQUI.apps.googleusercontent.com') {
+                gapi.load('client', initializeGapiClient);
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: SCOPES,
+                    callback: (tokenResponse) => {
+                        if (tokenResponse && tokenResponse.access_token) {
+                            isAuthenticated = true;
+                            updateUIForAuth();
+                            fetchGoogleTasks();
+                        }
+                    },
+                });
+            } else {
+                console.warn("Client ID de Google no configurado. Funcionando en modo Local.");
+                showToast("Modo Offline", "Client ID no configurado. Solo guardado local.", "warn");
+            }
+
+            document.getElementById('auth-btn').onclick = handleAuthClick;
+            document.getElementById('signout-btn').onclick = handleSignoutClick;
         };
 
-        function renderSchedule() {
-            const container = document.getElementById('schedule-list');
-            container.innerHTML = '';
+        // ==========================================
+        // GOOGLE API INTEGRATION
+        // ==========================================
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({ discoveryDocs: DISCOVERY_DOCS });
+                gapiInited = true;
+            } catch (err) { console.error("Error init GAPI:", err); }
+        }
+
+        function handleAuthClick() {
+            if (GOOGLE_CLIENT_ID === 'TU_CLIENT_ID_AQUI.apps.googleusercontent.com') {
+                alert("Debes configurar tu GOOGLE_CLIENT_ID en el código para conectar con Google.");
+                return;
+            }
+            if (gapiInited) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            }
+        }
+
+        function handleSignoutClick() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token, () => {
+                    gapi.client.setToken('');
+                    isAuthenticated = false;
+                    updateUIForAuth();
+                    renderTasks(); // Renderiza locales
+                });
+            }
+        }
+
+        function updateUIForAuth() {
+            const authBtn = document.getElementById('auth-btn');
+            const userInfo = document.getElementById('user-info');
+            const syncStatus = document.getElementById('sync-status');
             
-            Object.keys(schedule).forEach(day => {
-                const div = document.createElement('div');
-                div.className = "border-l-2 border-indigo-200 pl-4 py-1";
-                div.innerHTML = `
-                    <h4 class="font-bold text-indigo-700 mb-1">${day}</h4>
-                    <div class="flex flex-wrap gap-1">
-                        ${schedule[day].map(sub => `<span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md border border-indigo-100">${sub}</span>`).join('')}
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+            if (isAuthenticated) {
+                authBtn.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                document.getElementById('user-name').innerText = "Conectado a Google";
+                syncStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-cyber-primary inline-block shadow-[0_0_8px_#00f0ff]"></span> Sincronizado (Google)';
+                showToast("Conexión Exitosa", "Tus tareas ahora se sincronizan con Google Tasks y el Asistente.", "success");
+            } else {
+                authBtn.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+                syncStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block"></span> Local';
+            }
+        }
+
+        // ==========================================
+        // TAREAS (TASKS LOGIC)
+        // ==========================================
+        async function fetchGoogleTasks() {
+            try {
+                const response = await gapi.client.tasks.tasks.list({
+                    tasklist: googleTaskListId,
+                    showCompleted: true,
+                    showHidden: false
+                });
+                const gTasks = response.result.items || [];
+                // Convertir al formato de la app
+                localTasks = gTasks.map(t => ({
+                    id: t.id,
+                    name: t.title,
+                    date: t.due ? t.due.split('T')[0] : null,
+                    completed: t.status === 'completed'
+                }));
+                renderTasks();
+                updateTomorrowStatus();
+            } catch (err) {
+                console.error("Error fetching tasks:", err);
+                showToast("Error", "No se pudieron cargar las tareas de Google.", "error");
+            }
+        }
+
+        async function addTask() {
+            const name = document.getElementById('task-name').value.trim();
+            const date = document.getElementById('task-date').value;
+
+            if (!name) {
+                showToast("Atención", "Ingresa una descripción para la tarea.", "warn");
+                return;
+            }
+
+            if (isAuthenticated) {
+                // Save to Google Tasks
+                try {
+                    const taskBody = { title: name };
+                    if (date) taskBody.due = new Date(date).toISOString();
+                    
+                    const response = await gapi.client.tasks.tasks.insert({
+                        tasklist: googleTaskListId,
+                        resource: taskBody
+                    });
+                    
+                    localTasks.push({
+                        id: response.result.id,
+                        name: response.result.title,
+                        date: date || null,
+                        completed: false
+                    });
+                    showToast("Guardado", "Tarea subida a Google Tasks.", "success");
+                } catch (err) {
+                    console.error("Error creating task:", err);
+                    showToast("Error", "No se pudo guardar en Google.", "error");
+                }
+            } else {
+                // Save Locally
+                localTasks.push({ id: Date.now().toString(), name, date, completed: false });
+                localStorage.setItem('nexus_tasks', JSON.stringify(localTasks));
+                showToast("Guardado Local", "Tarea guardada en el dispositivo.", "success");
+            }
+
+            document.getElementById('task-name').value = '';
+            document.getElementById('task-date').value = '';
+            renderTasks();
+            updateTomorrowStatus();
+        }
+
+        async function toggleTask(id) {
+            const task = localTasks.find(t => t.id === id);
+            if(!task) return;
+            
+            task.completed = !task.completed;
+            
+            if (isAuthenticated) {
+                try {
+                    await gapi.client.tasks.tasks.patch({
+                        tasklist: googleTaskListId,
+                        task: id,
+                        resource: { status: task.completed ? 'completed' : 'needsAction' }
+                    });
+                } catch (err) { console.error("Error updating task:", err); }
+            } else {
+                localStorage.setItem('nexus_tasks', JSON.stringify(localTasks));
+            }
+            renderTasks();
+            updateTomorrowStatus();
+        }
+
+        async function deleteTask(id) {
+            localTasks = localTasks.filter(t => t.id !== id);
+            
+            if (isAuthenticated) {
+                try {
+                    await gapi.client.tasks.tasks.delete({ tasklist: googleTaskListId, task: id });
+                    showToast("Eliminado", "Tarea borrada de Google Tasks.", "success");
+                } catch (err) { console.error("Error deleting task:", err); }
+            } else {
+                localStorage.setItem('nexus_tasks', JSON.stringify(localTasks));
+            }
+            renderTasks();
+            updateTomorrowStatus();
         }
 
         function renderTasks() {
             const container = document.getElementById('tasks-container');
             container.innerHTML = '';
             
-            if (tasks.length === 0) {
-                container.innerHTML = '<div class="text-center py-10"><p class="text-slate-400 italic">No tienes tareas pendientes. ¡Libre!</p></div>';
+            const activeTasks = localTasks.filter(t => !t.completed);
+            const completedTasks = localTasks.filter(t => t.completed);
+            const sortedTasks = [...activeTasks, ...completedTasks];
+
+            if (sortedTasks.length === 0) {
+                container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-gray-500 font-mono text-sm opacity-50"><svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg><p>SIN TAREAS PENDIENTES</p></div>';
                 return;
             }
 
-            tasks.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(task => {
-                const isUrgent = isTomorrow(task.date);
+            sortedTasks.forEach(task => {
+                const isUrgent = task.date && isTomorrow(task.date) && !task.completed;
                 const div = document.createElement('div');
-                div.className = `group flex items-center justify-between p-4 rounded-xl border transition-all ${task.completed ? 'bg-slate-50 border-slate-200 opacity-60' : (isUrgent ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-white border-slate-100 shadow-sm')}`;
+                
+                let baseClass = "flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ";
+                if (task.completed) {
+                    baseClass += "bg-cyber-dark/50 border-gray-800 opacity-50";
+                } else if (isUrgent) {
+                    baseClass += "bg-red-900/20 border-cyber-accent shadow-[0_0_10px_rgba(255,0,85,0.2)]";
+                } else {
+                    baseClass += "bg-cyber-dark border-gray-700 hover:border-cyber-secondary";
+                }
+                
+                div.className = baseClass;
                 
                 div.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})" class="w-6 h-6 rounded-full border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                        <div>
-                            <p class="font-bold ${task.completed ? 'line-through text-slate-400' : 'text-slate-800'}">${task.name}</p>
-                            <p class="text-xs ${isUrgent && !task.completed ? 'text-red-500 font-bold' : 'text-slate-500'} italic">
-                                ${isUrgent && !task.completed ? '⚠️ ENTREGA MAÑANA' : 'Fecha: ' + formatDate(task.date)}
-                            </p>
+                    <div class="flex items-start gap-4 flex-1">
+                        <div class="pt-1">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" 
+                                class="w-5 h-5 rounded border-gray-600 bg-cyber-black text-cyber-primary focus:ring-cyber-primary focus:ring-offset-cyber-dark cursor-pointer">
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium text-sm md:text-base ${task.completed ? 'line-through text-gray-500' : 'text-gray-200'}">${escapeHtml(task.name)}</p>
+                            ${task.date ? `
+                                <p class="text-xs font-mono mt-1 ${isUrgent ? 'text-cyber-accent font-bold animate-pulse' : 'text-gray-500'}">
+                                    ${isUrgent ? '!! VENCE MAÑANA !!' : `[Vencimiento: ${formatDate(task.date)}]`}
+                                </p>
+                            ` : ''}
                         </div>
                     </div>
-                    <button onclick="deleteTask(${task.id})" class="text-slate-300 hover:text-red-500 transition-colors">
+                    <button onclick="deleteTask('${task.id}')" class="text-gray-600 hover:text-cyber-accent transition-colors ml-4" title="Eliminar">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 `;
                 container.appendChild(div);
             });
-            localStorage.setItem('tasks_7mo', JSON.stringify(tasks));
-            checkReminders();
         }
 
-        function addTask() {
-            const name = document.getElementById('task-name').value;
-            const date = document.getElementById('task-date').value;
+        // ==========================================
+        // HORARIO & SINCRONIZACIÓN CALENDAR
+        // ==========================================
+        function renderSchedule() {
+            const container = document.getElementById('schedule-list');
+            container.innerHTML = '';
+            
+            Object.keys(schedule).forEach(day => {
+                const div = document.createElement('div');
+                div.className = "flex flex-col border-l-2 border-cyber-secondary pl-3 py-1";
+                div.innerHTML = `
+                    <span class="text-cyber-secondary font-bold mb-1">${day.toUpperCase()}</span>
+                    <div class="flex flex-wrap gap-2">
+                        ${schedule[day].map(sub => `<span class="bg-cyber-dark px-2 py-1 rounded text-gray-300 border border-gray-800 text-xs">${sub}</span>`).join('')}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
 
-            if (!name || !date) {
-                showModal("Faltan datos", "Escribe el nombre de la tarea y cuándo hay que entregarla.");
+        async function syncScheduleToCalendar() {
+            if (!isAuthenticated) {
+                showToast("Atención", "Debes conectarte a Google primero.", "warn");
                 return;
             }
 
-            tasks.push({ id: Date.now(), name, date, completed: false });
-            document.getElementById('task-name').value = '';
-            document.getElementById('task-date').value = '';
-            renderTasks();
+            showToast("Sincronizando...", "Creando eventos en Google Calendar...", "info");
+            
+            // Lógica simplificada: Crea un evento recurrente (por 4 semanas) para probar.
+            // En un caso real, requeriría definir horas exactas para cada materia.
+            try {
+                const today = new Date();
+                const event = {
+                    'summary': 'Clases Liceo (Agenda Nexus)',
+                    'description': 'Horario sincronizado desde Nexus Agenda.',
+                    'start': {
+                        'dateTime': new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 0, 0).toISOString(),
+                        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                    },
+                    'end': {
+                        'dateTime': new Date(today.getFullYear(), today.getMonth(), today.getDate(), 13, 0, 0).toISOString(),
+                        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                    },
+                    'recurrence': ['RRULE:FREQ=WEEKLY;COUNT=5;BYDAY=MO,TU,WE,TH,FR'],
+                };
+
+                await gapi.client.calendar.events.insert({
+                    'calendarId': 'primary',
+                    'resource': event
+                });
+                
+                showToast("Éxito", "Horario bloqueado en Google Calendar. El Asistente ya lo sabe.", "success");
+            } catch(e) {
+                console.error(e);
+                showToast("Error", "No se pudo sincronizar el calendario.", "error");
+            }
         }
 
-        function toggleTask(id) {
-            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-            renderTasks();
+        // ==========================================
+        // NOTIFICACIONES & ESTADO DE MAÑANA
+        // ==========================================
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                showToast("Error", "Este navegador no soporta notificaciones de escritorio.", "error");
+            } else if (Notification.permission === "granted") {
+                showToast("Info", "Las notificaciones ya están activadas.", "info");
+                testNotification();
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") {
+                        showToast("Éxito", "Notificaciones activadas. Recibirás alertas importantes.", "success");
+                        testNotification();
+                    }
+                });
+            }
         }
 
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            renderTasks();
+        function testNotification() {
+            const n = new Notification("Nexus Agenda", {
+                body: "Conexión establecida. Te avisaré por aquí si hay deberes.",
+                icon: "https://cdn-icons-png.flaticon.com/512/825/825590.png"
+            });
         }
 
-        function isTomorrow(dateStr) {
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            return dateStr === tomorrow.toISOString().split('T')[0];
-        }
-
-        function formatDate(dateStr) {
-            const [year, month, day] = dateStr.split('-');
-            return `${day}/${month}/${year}`;
-        }
-
-        function checkReminders() {
+        function updateTomorrowStatus() {
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -210,41 +569,78 @@
             // Materias
             const subjectsElement = document.getElementById('next-day-subjects');
             if (schedule[tomorrowDayName]) {
-                subjectsElement.innerText = `Mañana tienes: ${schedule[tomorrowDayName].join(', ')}`;
+                subjectsElement.innerText = schedule[tomorrowDayName].join(' • ');
             } else {
-                subjectsElement.innerText = "¡No hay clases mañana!";
+                subjectsElement.innerText = "// FIN DE SEMANA // LIBRE";
+                subjectsElement.classList.replace('text-cyber-primary', 'text-gray-500');
             }
 
-            // Tareas
+            // Tareas Urgentes
             const urgentElement = document.getElementById('urgent-tasks');
-            const urgent = tasks.filter(t => t.date === tomorrowISO && !t.completed);
+            const urgent = localTasks.filter(t => t.date === tomorrowISO && !t.completed);
+            
             if (urgent.length > 0) {
-                urgentElement.innerHTML = `<span class="text-red-600">¡Tenés que terminar: ${urgent.map(t => t.name).join(', ')}!</span>`;
+                urgentElement.innerHTML = urgent.map(t => `<div class="text-cyber-accent animate-pulse flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> ${escapeHtml(t.name)}</div>`).join('');
+                
+                // Si son pasadas las 18:00 y no hemos notificado hoy, lanzar notificación real
+                if (today.getHours() >= 18 && Notification.permission === "granted" && !sessionStorage.getItem('notified_today')) {
+                    new Notification("⚠️ Tareas pendientes para mañana", {
+                        body: `Tienes ${urgent.length} tarea(s) que entregar mañana. ¡No te olvides!`,
+                    });
+                    sessionStorage.setItem('notified_today', 'true');
+                }
+
             } else {
-                urgentElement.innerText = "Todo al día por ahora.";
+                urgentElement.innerHTML = '<span class="text-gray-500">// NINGUNA</span>';
             }
         }
 
-        function handleCredentialResponse(response) {
-            try {
-                const base64Url = response.credential.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                const payload = JSON.parse(jsonPayload);
-                document.getElementById('user-info').innerText = `Estudiante: ${payload.name}`;
-                document.getElementById('user-info').classList.remove('hidden');
-                showModal("¡Hola!", `Agenda vinculada con la cuenta de ${payload.given_name}.`);
-            } catch (e) { console.error(e); }
+        // ==========================================
+        // UTILS
+        // ==========================================
+        function isTomorrow(dateStr) {
+            if(!dateStr) return false;
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            return dateStr === tomorrow.toISOString().split('T')[0];
         }
 
-        function showModal(title, msg) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-message').innerText = msg;
-            document.getElementById('custom-modal').classList.remove('hidden');
+        function formatDate(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}`;
         }
 
-        function closeModal() {
-            document.getElementById('custom-modal').classList.add('hidden');
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function showToast(title, message, type = 'info') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-message').innerText = message;
+            
+            const icon = document.getElementById('toast-icon');
+            if(type === 'success') {
+                icon.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                toast.className = 'fixed bottom-4 right-4 transition-all duration-300 glass-panel p-4 rounded-xl border-l-4 border-cyber-primary z-50 flex items-center gap-3 translate-y-0 opacity-100';
+            } else if (type === 'warn') {
+                icon.innerHTML = '<svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+                toast.className = 'fixed bottom-4 right-4 transition-all duration-300 glass-panel p-4 rounded-xl border-l-4 border-yellow-500 z-50 flex items-center gap-3 translate-y-0 opacity-100';
+            } else {
+                icon.innerHTML = '<svg class="w-6 h-6 text-cyber-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                toast.className = 'fixed bottom-4 right-4 transition-all duration-300 glass-panel p-4 rounded-xl border-l-4 border-cyber-accent z-50 flex items-center gap-3 translate-y-0 opacity-100';
+            }
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 4000);
         }
     </script>
 </body>
